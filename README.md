@@ -1,69 +1,111 @@
 # Akadaemia Anyder
 
-> Your Eorzean Collection Archive
+A Dalamud plugin for Final Fantasy XIV that tracks crafting recipes, gathering nodes, and fishing holes across all your characters.
 
-A local memory-reading collection tracker for Final Fantasy XIV that automatically monitors what you've obtained without relying on Lodestone scraping.
+## Features
 
-## Overview
+### ✅ Currently Implemented
+- **Recipe Tracking**: Monitors all crafting recipes learned via memory reading from your character's recipe book
+- **Progress Display**: Visual progress bars, completion percentages, and collection statistics for recipes
+- **Multi-Character**: Automatically tracks collections per character
+- **Export/Import**: JSON-based backup and restore for all collection data
+- **Database Reliability**: 3-tier fallback strategy (file → in-memory → degraded mode)
+- **Performance**: Optimized memory reading with safe, bounded access patterns
 
-Akadaemia Anyder is a collection tracking tool that reads game memory to provide real-time tracking of your FFXIV collections. Named after the ancient Amaurotine academy, this tool aims to catalog your accomplishments with the precision of the Ancients' creation magic.
+### ⚠️ Infrastructure Complete, Detection Logic Pending
+- **Gathering Tracking**: Event listeners and database ready, game event detection not yet implemented
+- **Fishing Tracking**: Event listeners and database ready, game event detection not yet implemented
 
-## Features (Planned)
+> **Note**: Gathering and Fishing require FFXIVClientStructs APIs that are currently stub-only. Infrastructure is built and ready; detection logic requires additional research into Dalamud's game state APIs.
 
-- **Crafting & Gathering Logs**: Track recipe completion and gathering node progress
-- **Blue Mage Spells**: Monitor learned spells from your spellbook
-- **Quest Progress**: Track MSQ, side quests, and beast tribe progression
-- **Duty Completion**: Monitor dungeon, trial, and raid clears
-- **Sightseeing Log**: Automated vista completion tracking
-- **Relic Weapons**: Track progress on all relic quest chains
+## Installation
 
-## Project Status
+### Using Dalamud Plugin Repository (Recommended)
 
-🚧 **Early Development** - Project structure being established
+1. Install [XIVLauncher](https://github.com/goatcorp/FFXIVQuickLauncher)
+2. Launch FFXIV through XIVLauncher
+3. Type `/xlplugins` in-game to open Plugin Installer
+4. Search for "Akadaemia Anyder" and install
+5. Type `/akadaemia` in-game to open the tracker
+
+### Development Build
+
+For development, see [DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
+## Usage
+
+### Basic Commands
+
+- `/akadaemia` - Toggle main tracker window
+- `/akadaemia-config` - Open settings and advanced options
+
+### In-Game Features
+
+1. **Main Window**
+   - Tabs for Recipes, Gathering, and Fishing collections
+   - Real-time progress indicators
+   - Completion statistics
+   - Character selector
+
+2. **Collection Management**
+   - Click "Scan Collections" to update your current progress
+   - View detailed breakdown by category
+   - Export collections to JSON file
+   - Import previously exported collections
+
+3. **Settings**
+   - Database health status
+   - Import/export options
+   - Character management
+   - Display preferences
 
 ## Architecture
 
-This tool operates entirely locally by reading FFXIV game memory, similar to how ACT and Dalamud plugins function. All data remains on your machine.
+The plugin uses a sophisticated architecture designed for reliability and performance:
 
-### Technology Stack
+- **Hybrid Tracking**: Memory reading for recipes (one-time load), event listening for gathering/fishing (real-time)
+- **3-Tier Database**: Automatic fallback from file-based SQLite → in-memory fallback → degraded mode on corruption
+- **Repository Pattern**: Clean data access layer with retry logic and error handling
+- **SafeMemoryReader**: Bounded, exception-safe memory access with automatic fallback
+- **ImGui UI**: Native FFXIV overlay interface that integrates seamlessly with game UI
 
-- Memory reading via process inspection
-- Local data storage
-- No network calls or data transmission
-
-## Legal & ToS Considerations
-
-⚠️ **Important**: Like ACT and other third-party tools, this application violates FFXIV's Terms of Service §2.5 (data mining via unauthorized software). 
-
-**Risk Profile**: Memory-reading collection trackers have no documented enforcement history. However:
-- Never mention this tool in-game
-- Use at your own risk
-- Account suspension is possible per ToS
+For detailed architecture documentation, see [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Development
 
-### Project Structure
+To contribute or build locally, see [DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
-```
-akadaemia-anyder/
-├── docs/           # Documentation and research
-├── src/            # Source code
-├── tests/          # Test suite
-└── README.md
-```
+## Requirements
 
-## Etymology
-
-**Akadaemia Anyder** (Greek: "Waterless Academy") - A dungeon in FFXIV's Shadowbringers expansion located in the phantom city of Amaurot. The academy served as a repository of knowledge for the ancient civilization.
+- FINAL FANTASY XIV (any region, any expansion level)
+- Dalamud plugin system enabled via XIVLauncher
+- Windows 10 or later
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License - see [LICENSE](LICENSE) file
+
+## Troubleshooting
+
+### Plugin doesn't load
+- Ensure XIVLauncher is configured correctly
+- Run `/xlplugins` to check Dalamud status
+- Check plugin compatibility with your Dalamud version
+
+### Database errors
+- Plugin automatically recovers from database corruption
+- Check game logs in `%APPDATA%\XIVLauncher\log\` for detailed error messages
+- Database is stored in `%APPDATA%\XIVLauncher\pluginConfigs\AkadaemiaAnyder\akadaemia.db`
+
+### Collection data missing
+- Use export feature from Settings to backup current data
+- Re-scan collections with "Scan Collections" button
+- Import previously exported JSON files if needed
+
+## Author
+
+wgdevelopment
 
 ## Contributing
 
-Contributions welcome! Please see CONTRIBUTING.md for guidelines.
-
-## Disclaimer
-
-This project is not affiliated with or endorsed by Square Enix. FINAL FANTASY is a registered trademark of Square Enix Holdings Co., Ltd.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.

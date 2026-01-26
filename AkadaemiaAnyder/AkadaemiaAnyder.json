@@ -1,0 +1,13 @@
+{
+  "Author": "wgdevelopment",
+  "Name": "Akadaemia Anyder",
+  "Punchline": "Track your FFXIV collection progress",
+  "Description": "Tracks crafting recipes, gathering nodes, and fishing holes. Use /akadaemia to open the tracker window.",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "collection",
+    "crafting",
+    "gathering",
+    "fishing"
+  ]
+}

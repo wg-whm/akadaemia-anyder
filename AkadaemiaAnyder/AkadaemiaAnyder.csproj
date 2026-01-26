@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/14.0.1">
+  <PropertyGroup>
+    <Version>0.0.0.1</Version>
+    <TargetFramework>net10.0-windows7.0</TargetFramework>
+    <LangVersion>13.0</LangVersion>
+    <PackageProjectUrl>https://github.com/wgdevelopment/akadaemia-anyder</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <IsPackable>false</IsPackable>
+    <OutputPath>$(APPDATA)\XIVLauncher\devPlugins\AkadaemiaAnyder\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\Data\goat.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </Content>
+  </ItemGroup>
+
+  <!-- Reference FFXIVClientStructs from Dalamud bundled DLL -->
+  <ItemGroup>
+    <Reference Include="FFXIVClientStructs">
+      <HintPath>$(APPDATA)\XIVLauncher\addon\Hooks\dev\FFXIVClientStructs.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Add Microsoft.Data.Sqlite NuGet package -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+  </ItemGroup>
+</Project>
