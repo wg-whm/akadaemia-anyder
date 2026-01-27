@@ -1,0 +1,41 @@
+=== Database Tier Test Execution Plan ===
+
+The DatabaseContext implementation is complete with all required components.
+
+To execute tier tests in runtime:
+
+1. TIER 1 TEST (Normal file-based):
+   - DatabaseContext will create akadaemia.db in plugin config directory
+   - Verify: Check GetHealthStatus() returns DatabaseTier.Tier1
+   - Verify: Database file exists on disk
+   - Verify: All 5 tables exist (collections, recipes, gathering_nodes, fishing_holes, schema_version)
+   - Verify: schema_version table shows version = 1
+
+2. TIER 2 TEST (Recovery from corruption):
+   - Manually corrupt akadaemia.db (write invalid bytes)
+   - Restart plugin / recreate DatabaseContext
+   - Verify: GetHealthStatus() returns DatabaseTier.Tier2
+   - Verify: Old corrupted file was deleted
+   - Verify: New database file created successfully
+   - Verify: All tables exist in recovered database
+
+3. TIER 3 TEST (In-memory fallback):
+   - Make plugin config directory read-only OR delete write permissions
+   - Create new DatabaseContext
+   - Verify: GetHealthStatus() returns DatabaseTier.Tier3
+   - Verify: Connection is not null
+   - Verify: Can query tables (data lives in memory only)
+   - Verify: No database file on disk
+
+4. DEGRADED TEST:
+   - This would require blocking ALL SQLite operations (file + memory)
+   - Practically tested by successful Tier 3 fallback
+   - Verify: GetHealthStatus() returns DatabaseTier.Degraded if all tiers fail
+
+AUTOMATED TEST:
+Run DatabaseIntegrationTest.RunTests(log) from Plugin.cs to execute all tests automatically.
+This creates temporary directories, tests each tier, and cleans up.
+
+MANUAL INSPECTION:
+Use DatabaseTestUtility.RunAllTests(log, testDirectory) for detailed manual testing
+with step-by-step logging.
