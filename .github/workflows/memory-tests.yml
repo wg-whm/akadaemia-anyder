@@ -8,7 +8,7 @@ on:
 
 jobs:
   memory-safety-tests:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -19,31 +19,6 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Setup Dalamud for CI
-        shell: pwsh
-        run: |
-          $dalamudPath = "$env:APPDATA\XIVLauncher\addon\Hooks\dev"
-          New-Item -ItemType Directory -Path $dalamudPath -Force | Out-Null
-
-          Write-Host "Downloading Dalamud assemblies for CI build..."
-
-          # Download from Dalamud staging (designed for CI)
-          $dalamudUrl = "https://goatcorp.github.io/dalamud-distrib/latest.zip"
-          $zipPath = "$env:TEMP\dalamud-latest.zip"
-
-          try {
-            Invoke-WebRequest -Uri $dalamudUrl -OutFile $zipPath -ErrorAction Stop
-            Write-Host "✓ Downloaded Dalamud assemblies"
-          }
-          catch {
-            Write-Host "ERROR: Failed to download Dalamud: $_" -ForegroundColor Red
-            exit 1
-          }
-
-          # Extract to Dalamud dev path
-          Expand-Archive -Path $zipPath -DestinationPath $dalamudPath -Force
-          Write-Host "✓ Dalamud assemblies extracted to $dalamudPath"
-
       - name: Restore dependencies
         run: dotnet restore
 
@@ -51,7 +26,7 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Run memory safety tests
-        run: dotnet test MemorySafetyTests/MemorySafetyTests.csproj --configuration Release --verbosity normal --logger "trx;LogFileName=memory-tests-results.trx"
+        run: dotnet test MemorySafetyTests/MemorySafetyTests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=memory-tests-results.trx"
 
       - name: Upload test results
         if: always()
@@ -62,10 +37,22 @@ jobs:
           retention-days: 30
 
       - name: Check for memory leaks
+        shell: bash
         run: |
+          # Find the test results file
+          RESULT_FILE=$(find . -name "memory-tests-results.trx" -type f | head -n 1)
+
+          if [ -z "$RESULT_FILE" ]; then
+            echo "⚠️ Test results file not found"
+            exit 1
+          fi
+
+          echo "Checking test results in: $RESULT_FILE"
+
           # Parse test results and check for memory leak detection
-          if grep -q "MemoryLeakDetected\|OutOfMemoryException" memory-tests-results.trx; then
+          if grep -q "MemoryLeakDetected\|OutOfMemoryException" "$RESULT_FILE"; then
             echo "⚠️ Potential memory leaks detected"
             exit 1
           fi
+
           echo "✓ Memory safety checks passed"
