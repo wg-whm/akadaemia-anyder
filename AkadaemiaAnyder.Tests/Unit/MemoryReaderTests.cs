@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Moq;
 using SamplePlugin.MemoryReaders;
 using AkadaemiaAnyder.Core.Models;
+using Dalamud.Plugin.Services;
 
 namespace AkadaemiaAnyder.Tests.Unit;
 
@@ -300,7 +301,9 @@ public class MemoryReaderTests
     public void RecipeReader_IsAvailable_ReturnsFalseWhenUIStateNull()
     {
         // Arrange
-        var reader = new RecipeReader();
+        var mockLog = new Mock<IPluginLog>();
+        var mockDataManager = new Mock<IDataManager>();
+        var reader = new RecipeReader(mockLog.Object, mockDataManager.Object);
 
         // Act
         var result = reader.IsAvailable();
@@ -314,7 +317,9 @@ public class MemoryReaderTests
     public void RecipeReader_ReadData_ReturnsNullWhenNotAvailable()
     {
         // Arrange
-        var reader = new RecipeReader();
+        var mockLog = new Mock<IPluginLog>();
+        var mockDataManager = new Mock<IDataManager>();
+        var reader = new RecipeReader(mockLog.Object, mockDataManager.Object);
 
         // Act
         var result = reader.ReadData();
@@ -327,7 +332,9 @@ public class MemoryReaderTests
     public void RecipeReader_GetTotalCount_ReturnsExpectedValue()
     {
         // Arrange
-        var reader = new RecipeReader();
+        var mockLog = new Mock<IPluginLog>();
+        var mockDataManager = new Mock<IDataManager>();
+        var reader = new RecipeReader(mockLog.Object, mockDataManager.Object);
 
         // Act
         var result = reader.GetTotalCount();
@@ -340,7 +347,9 @@ public class MemoryReaderTests
     public void RecipeReader_GetUnlockedCount_ReturnsZeroWhenNotAvailable()
     {
         // Arrange
-        var reader = new RecipeReader();
+        var mockLog = new Mock<IPluginLog>();
+        var mockDataManager = new Mock<IDataManager>();
+        var reader = new RecipeReader(mockLog.Object, mockDataManager.Object);
 
         // Act
         var result = reader.GetUnlockedCount();

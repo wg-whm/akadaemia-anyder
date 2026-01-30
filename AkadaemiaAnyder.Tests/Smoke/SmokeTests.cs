@@ -238,7 +238,7 @@ public class SmokeTests : IDisposable
 
         try
         {
-            recipeReader = new SamplePlugin.MemoryReaders.RecipeReader();
+            recipeReader = new SamplePlugin.MemoryReaders.RecipeReader(_mockLog.Object, new Mock<IDataManager>().Object);
         }
         catch (Exception ex)
         {
