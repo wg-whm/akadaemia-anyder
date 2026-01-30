@@ -21,14 +21,14 @@ jobs:
         shell: pwsh
         run: |
           Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
-          Invoke-ScriptAnalyzer -Path . -Recurse -ReportSeverity Warning
+          Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning
 
       - name: Validate Dalamud Plugin Manifest
         shell: pwsh
         run: |
           Write-Host "Validating Dalamud plugin manifest..."
 
-          $manifestPath = "akadaemia-anyder/AkadaemiaAnyder/AkadaemiaAnyder.json"
+          $manifestPath = "AkadaemiaAnyder/AkadaemiaAnyder.json"
 
           # Check if manifest file exists
           if (-not (Test-Path $manifestPath)) {
@@ -172,7 +172,7 @@ jobs:
 
       - name: Upload coverage report
         if: matrix.collect_coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report-${{ matrix.configuration }}
           path: coverage/
@@ -180,7 +180,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.configuration }}
           path: '**/TestResults/'
