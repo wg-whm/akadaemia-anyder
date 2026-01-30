@@ -154,7 +154,7 @@ jobs:
         run: dotnet build --configuration ${{ matrix.configuration }} --no-restore
 
       - name: Run unit tests
-        run: dotnet test AkadaemiaAnyder.Tests/AkadaemiaAnyder.Tests.csproj --configuration ${{ matrix.configuration }} --no-build --verbosity normal --collect:"XPlat Code Coverage"
+        run: dotnet test AkadaemiaAnyder.Tests/AkadaemiaAnyder.Tests.csproj --configuration ${{ matrix.configuration }} --verbosity normal --collect:"XPlat Code Coverage"
 
       - name: Install ReportGenerator
         if: matrix.collect_coverage

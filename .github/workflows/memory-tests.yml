@@ -51,7 +51,7 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Run memory safety tests
-        run: dotnet test MemorySafetyTests/MemorySafetyTests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=memory-tests-results.trx"
+        run: dotnet test MemorySafetyTests/MemorySafetyTests.csproj --configuration Release --verbosity normal --logger "trx;LogFileName=memory-tests-results.trx"
 
       - name: Upload test results
         if: always()
