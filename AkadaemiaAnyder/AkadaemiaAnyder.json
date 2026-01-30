@@ -1,6 +1,8 @@
 {
   "Author": "wgdevelopment",
   "Name": "Akadaemia Anyder",
+  "InternalName": "AkadaemiaAnyder",
+  "AssemblyVersion": "0.0.0.1",
   "Punchline": "Track your FFXIV collection progress",
   "Description": "Tracks crafting recipes, gathering nodes, and fishing holes. Use /akadaemia to open the tracker window.",
   "ApplicableVersion": "any",

@@ -1,0 +1,46 @@
+name: Memory Safety Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  memory-safety-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10.x
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build solution
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run memory safety tests
+        run: dotnet test MemorySafetyTests/MemorySafetyTests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=memory-tests-results.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: memory-test-results
+          path: '**/memory-tests-results.trx'
+          retention-days: 30
+
+      - name: Check for memory leaks
+        run: |
+          # Parse test results and check for memory leak detection
+          if grep -q "MemoryLeakDetected\|OutOfMemoryException" memory-tests-results.trx; then
+            echo "⚠️ Potential memory leaks detected"
+            exit 1
+          fi
+          echo "✓ Memory safety checks passed"

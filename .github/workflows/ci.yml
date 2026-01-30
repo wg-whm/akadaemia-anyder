@@ -1,0 +1,187 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  lint:
+    runs-on: windows-latest
+    name: Lint and Validate
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PowerShell
+        uses: microsoft/setup-msbuild@v1.0.3
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+          Invoke-ScriptAnalyzer -Path . -Recurse -ReportSeverity Warning
+
+      - name: Validate Dalamud Plugin Manifest
+        shell: pwsh
+        run: |
+          Write-Host "Validating Dalamud plugin manifest..."
+
+          $manifestPath = "akadaemia-anyder/AkadaemiaAnyder/AkadaemiaAnyder.json"
+
+          # Check if manifest file exists
+          if (-not (Test-Path $manifestPath)) {
+            Write-Host "ERROR: Manifest file not found at $manifestPath" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "Manifest file found: $manifestPath"
+
+          # Parse JSON manifest
+          try {
+            $manifest = Get-Content $manifestPath | ConvertFrom-Json
+            Write-Host "Manifest JSON parsed successfully"
+          }
+          catch {
+            Write-Host "ERROR: Failed to parse manifest JSON: $_" -ForegroundColor Red
+            exit 1
+          }
+
+          # Validate required fields
+          $requiredFields = @("Name", "Author", "Description", "InternalName", "AssemblyVersion")
+          $missingFields = @()
+
+          foreach ($field in $requiredFields) {
+            if (-not ($manifest.PSObject.Properties.Name -contains $field)) {
+              $missingFields += $field
+              Write-Host "ERROR: Missing required field: $field" -ForegroundColor Red
+            }
+            elseif ([string]::IsNullOrWhiteSpace($manifest.$field)) {
+              $missingFields += $field
+              Write-Host "ERROR: Required field is empty: $field" -ForegroundColor Red
+            }
+            else {
+              Write-Host "✓ $field = $($manifest.$field)"
+            }
+          }
+
+          # Fail if any required fields are missing or empty
+          if ($missingFields.Count -gt 0) {
+            Write-Host ""
+            Write-Host "Manifest validation failed - missing or empty fields: $($missingFields -join ', ')" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host ""
+          Write-Host "Manifest validation passed - all required fields present and non-empty" -ForegroundColor Green
+
+      - name: Validate CLAUDE.md references
+        shell: bash
+        run: |
+          if [ ! -f "CLAUDE.md" ]; then
+            echo "CLAUDE.md not found - skipping"
+            exit 0
+          fi
+
+          refs=$(grep -oE '@[^[:space:]]+' CLAUDE.md | sed 's/@//' || true)
+          broken=0
+
+          while IFS= read -r ref; do
+            if [ -e "$ref" ]; then
+              echo "✓ $ref"
+            else
+              echo "✗ $ref (not found)"
+              broken=$((broken + 1))
+            fi
+          done <<< "$refs"
+
+          if [ $broken -gt 0 ]; then
+            echo "ERROR: $broken broken references"
+            exit 1
+          fi
+
+  build:
+    runs-on: windows-latest
+    name: Build and Test
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+        include:
+          - configuration: Debug
+            collect_coverage: true
+          - configuration: Release
+            collect_coverage: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '10.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration ${{ matrix.configuration }} --no-restore
+
+      - name: Run unit tests
+        run: dotnet test AkadaemiaAnyder.Tests/AkadaemiaAnyder.Tests.csproj --configuration ${{ matrix.configuration }} --no-build --verbosity normal --collect:"XPlat Code Coverage"
+
+      - name: Install ReportGenerator
+        if: matrix.collect_coverage
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Generate Coverage Report
+        if: matrix.collect_coverage
+        run: reportgenerator -reports:**/coverage.cobertura.xml -targetdir:coverage -reporttypes:"Html;Cobertura" -verbosity:Info
+
+      - name: Enforce Coverage Threshold
+        if: matrix.collect_coverage
+        run: |
+          $xmlFile = Get-ChildItem -Path "coverage" -Filter "Cobertura.xml" -Recurse | Select-Object -First 1
+          if ($null -eq $xmlFile) {
+            Write-Host "ERROR: Cobertura.xml not found"
+            exit 1
+          }
+
+          [xml]$cobertura = Get-Content $xmlFile.FullName
+          $lineCoverageAttr = $cobertura.coverage.GetAttribute("line-rate")
+
+          if ([string]::IsNullOrEmpty($lineCoverageAttr)) {
+            Write-Host "WARNING: line-rate attribute not found in Cobertura.xml, assuming 0%"
+            $coverage = 0
+          } else {
+            $coverage = [float]$lineCoverageAttr
+          }
+
+          $threshold = 0.35
+
+          Write-Host "Code Coverage: $($coverage * 100)%"
+          Write-Host "Threshold: $($threshold * 100)%"
+
+          if ($coverage -lt $threshold) {
+            Write-Host "ERROR: Coverage $($coverage * 100)% is below threshold $($threshold * 100)%" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "✓ Coverage threshold passed" -ForegroundColor Green
+
+      - name: Upload coverage report
+        if: matrix.collect_coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report-${{ matrix.configuration }}
+          path: coverage/
+          retention-days: 30
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-${{ matrix.configuration }}
+          path: '**/TestResults/'
+          retention-days: 30
