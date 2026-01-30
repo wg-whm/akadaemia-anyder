@@ -74,7 +74,8 @@ public class EndToEndWorkflowTests : IDisposable
         var fishingListener = new FishingEventListener(_mockFramework.Object, _mockClientState.Object, _mockLog.Object);
 
         // Use RecipeReader directly (it returns empty/unavailable when not in game, which is expected in tests)
-        var recipeReader = new RecipeReader();
+        var mockDataManager = new Mock<IDataManager>();
+        var recipeReader = new RecipeReader(_mockLog.Object, mockDataManager.Object);
 
         var collectionService = new CollectionService(
             collectionRepo,
@@ -142,7 +143,8 @@ public class EndToEndWorkflowTests : IDisposable
 
         var gatheringListener = new GatheringEventListener(_mockFramework.Object, _mockClientState.Object, _mockLog.Object);
         var fishingListener = new FishingEventListener(_mockFramework.Object, _mockClientState.Object, _mockLog.Object);
-        var recipeReader = new RecipeReader();
+        var mockDataManager = new Mock<IDataManager>();
+        var recipeReader = new RecipeReader(_mockLog.Object, mockDataManager.Object);
 
         var collectionService = new CollectionService(
             collectionRepo,
@@ -179,7 +181,8 @@ public class EndToEndWorkflowTests : IDisposable
         var fishingRepo = new FishingRepository(context, _mockLog.Object);
 
         // Use real RecipeReader which returns empty when not in game
-        var recipeReader = new RecipeReader();
+        var mockDataManager = new Mock<IDataManager>();
+        var recipeReader = new RecipeReader(_mockLog.Object, mockDataManager.Object);
         var gatheringListener = new GatheringEventListener(_mockFramework.Object, _mockClientState.Object, _mockLog.Object);
         var fishingListener = new FishingEventListener(_mockFramework.Object, _mockClientState.Object, _mockLog.Object);
 
@@ -260,7 +263,8 @@ public class EndToEndWorkflowTests : IDisposable
         var gatheringRepo = new GatheringRepository(context, _mockLog.Object);
         var fishingRepo = new FishingRepository(context, _mockLog.Object);
 
-        var recipeReader = new RecipeReader();
+        var mockDataManager = new Mock<IDataManager>();
+        var recipeReader = new RecipeReader(_mockLog.Object, mockDataManager.Object);
         var gatheringListener = new GatheringEventListener(_mockFramework.Object, _mockClientState.Object, _mockLog.Object);
         var fishingListener = new FishingEventListener(_mockFramework.Object, _mockClientState.Object, _mockLog.Object);
 
@@ -332,7 +336,8 @@ public class EndToEndWorkflowTests : IDisposable
         var gatheringRepo = new GatheringRepository(context, _mockLog.Object);
         var fishingRepo = new FishingRepository(context, _mockLog.Object);
 
-        var recipeReader = new RecipeReader();
+        var mockDataManager = new Mock<IDataManager>();
+        var recipeReader = new RecipeReader(_mockLog.Object, mockDataManager.Object);
         var gatheringListener = new GatheringEventListener(_mockFramework.Object, _mockClientState.Object, _mockLog.Object);
         var fishingListener = new FishingEventListener(_mockFramework.Object, _mockClientState.Object, _mockLog.Object);
 

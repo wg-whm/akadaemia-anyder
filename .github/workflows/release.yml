@@ -99,7 +99,7 @@ jobs:
           Get-ChildItem $stagingPath
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: release-artifacts
           path: release-artifacts/
@@ -177,7 +177,7 @@ jobs:
 
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v3
         with:
           name: release-artifacts
 
@@ -292,7 +292,7 @@ jobs:
           cat release_summary.txt
 
       - name: Upload release summary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: release-summary
           path: release_summary.txt

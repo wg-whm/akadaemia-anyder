@@ -3,6 +3,7 @@ using OtterGui.OtterGuiInternal.Enums;
 using OtterGuiInternal.Enums;
 using OtterGuiInternal.Structs;
 using OtterGuiInternal.Utility;
+using ImGuiId = OtterGuiInternal.Enums.ImGuiId;
 
 namespace OtterGuiInternal;
 

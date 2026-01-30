@@ -3,6 +3,7 @@ using OtterGuiInternal.Enums;
 
 namespace OtterGuiInternal.Utility;
 
+using ImGuiId = OtterGuiInternal.Enums.ImGuiId;
 public static class StringHelpers
 {
     /// <summary> The maximum size of a stack allocation for strings. </summary>
