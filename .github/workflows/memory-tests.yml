@@ -8,7 +8,7 @@ on:
 
 jobs:
   memory-safety-tests:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
@@ -18,6 +18,31 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.x'
+
+      - name: Setup Dalamud for CI
+        shell: pwsh
+        run: |
+          $dalamudPath = "$env:APPDATA\XIVLauncher\addon\Hooks\dev"
+          New-Item -ItemType Directory -Path $dalamudPath -Force | Out-Null
+
+          Write-Host "Downloading Dalamud assemblies for CI build..."
+
+          # Download from Dalamud staging (designed for CI)
+          $dalamudUrl = "https://goatcorp.github.io/dalamud-distrib/latest.zip"
+          $zipPath = "$env:TEMP\dalamud-latest.zip"
+
+          try {
+            Invoke-WebRequest -Uri $dalamudUrl -OutFile $zipPath -ErrorAction Stop
+            Write-Host "✓ Downloaded Dalamud assemblies"
+          }
+          catch {
+            Write-Host "ERROR: Failed to download Dalamud: $_" -ForegroundColor Red
+            exit 1
+          }
+
+          # Extract to Dalamud dev path
+          Expand-Archive -Path $zipPath -DestinationPath $dalamudPath -Force
+          Write-Host "✓ Dalamud assemblies extracted to $dalamudPath"
 
       - name: Restore dependencies
         run: dotnet restore
@@ -37,22 +62,23 @@ jobs:
           retention-days: 30
 
       - name: Check for memory leaks
-        shell: bash
+        shell: pwsh
         run: |
           # Find the test results file
-          RESULT_FILE=$(find . -name "memory-tests-results.trx" -type f | head -n 1)
+          $resultFile = Get-ChildItem -Recurse -Filter "memory-tests-results.trx" | Select-Object -First 1
 
-          if [ -z "$RESULT_FILE" ]; then
-            echo "⚠️ Test results file not found"
+          if ($null -eq $resultFile) {
+            Write-Host "⚠️ Test results file not found" -ForegroundColor Yellow
             exit 1
-          fi
+          }
 
-          echo "Checking test results in: $RESULT_FILE"
+          Write-Host "Checking test results in: $($resultFile.FullName)"
 
           # Parse test results and check for memory leak detection
-          if grep -q "MemoryLeakDetected\|OutOfMemoryException" "$RESULT_FILE"; then
-            echo "⚠️ Potential memory leaks detected"
+          $content = Get-Content $resultFile.FullName -Raw
+          if ($content -match "MemoryLeakDetected|OutOfMemoryException") {
+            Write-Host "⚠️ Potential memory leaks detected" -ForegroundColor Yellow
             exit 1
-          fi
+          }
 
-          echo "✓ Memory safety checks passed"
+          Write-Host "✓ Memory safety checks passed" -ForegroundColor Green
