@@ -8,6 +8,7 @@
         <Copyright>Copyright © 2025</Copyright>
         <WarningLevel>4</WarningLevel>
         <OutputPath>bin\$(Configuration)\</OutputPath>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     </PropertyGroup>
 
     <PropertyGroup>

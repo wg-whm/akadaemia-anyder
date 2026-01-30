@@ -41,23 +41,19 @@
     <PackageReference Include="Roslynator.Analyzers" Version="4.12.9" />
   </ItemGroup>
 
-  <!-- Artisan fork dependencies (temporarily disabled for blueprint execution) -->
+  <!-- Artisan fork dependencies (restored for OtterGui and PunishLib) -->
   <ItemGroup>
     <!-- DalamudPackager already included in Dalamud.NET.Sdk -->
-    <!-- <PackageReference Include="ECommons" Version="3.1.0.10" /> -->
-    <!-- <PackageReference Include="FuzzySharp" Version="2.0.2" /> -->
-    <!-- <PackageReference Include="NAudio" Version="2.2.1" /> -->
-    <!-- <PackageReference Include="Microsoft.CodeAnalysis" Version="4.10.0" /> -->
-    <!-- <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" /> -->
-    <!-- <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" /> -->
-    <!-- <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" /> -->
+    <PackageReference Include="ECommons" Version="3.1.0.10" />
+    <PackageReference Include="FuzzySharp" Version="2.0.2" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis" Version="4.10.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
+    <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
+    <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
     <!-- Discord.Net.Webhook EXCLUDED - privacy violation -->
   </ItemGroup>
 
-  <!-- Exclude Artisan modules from compilation temporarily -->
-  <ItemGroup>
-    <Compile Remove="Modules\**\*.cs" />
-    <EmbeddedResource Remove="Modules\**\*" />
-    <None Remove="Modules\**\*" />
-  </ItemGroup>
 </Project>
+

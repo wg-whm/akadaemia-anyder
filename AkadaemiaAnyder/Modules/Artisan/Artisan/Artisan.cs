@@ -1,5 +1,6 @@
 global using Player = ECommons.GameHelpers.Player;
 using AkadaemiaAnyder.Modules.Artisan.Autocraft;
+using Module = ECommons.Module;
 using AkadaemiaAnyder.Modules.Artisan.ContextMenus;
 using AkadaemiaAnyder.Modules.Artisan.CraftingLists;
 using AkadaemiaAnyder.Modules.Artisan.CraftingLogic;

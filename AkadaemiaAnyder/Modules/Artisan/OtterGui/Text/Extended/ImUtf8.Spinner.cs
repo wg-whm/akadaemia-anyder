@@ -1,4 +1,5 @@
 using Dalamud.Bindings.ImGui;
+using ImGuiId = OtterGuiInternal.Enums.ImGuiId;
 using OtterGuiInternal;
 using OtterGuiInternal.Enums;
 using OtterGuiInternal.Structs;

@@ -1,4 +1,5 @@
 using Dalamud.Interface.ImGuiNotification;
+using ImGuiId = OtterGuiInternal.Enums.ImGuiId;
 using Dalamud.Bindings.ImGui;
 using OtterGui.Classes;
 using OtterGui.Raii;

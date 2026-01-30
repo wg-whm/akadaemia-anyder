@@ -1,4 +1,5 @@
 using AkadaemiaAnyder.Modules.Artisan.Autocraft;
+using ImGuiEx = ECommons.ImGuiMethods.ImGuiEx;
 using AkadaemiaAnyder.Modules.Artisan.CraftingLists;
 using AkadaemiaAnyder.Modules.Artisan.CraftingLogic;
 using AkadaemiaAnyder.Modules.Artisan.FCWorkshops;

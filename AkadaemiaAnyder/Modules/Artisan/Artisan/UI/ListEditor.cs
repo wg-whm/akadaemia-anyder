@@ -1,6 +1,7 @@
 namespace AkadaemiaAnyder.Modules.Artisan.UI;
 
 using Autocraft;
+using ImGuiEx = ECommons.ImGuiMethods.ImGuiEx;
 using CraftingLists;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
