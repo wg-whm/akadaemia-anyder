@@ -19,6 +19,31 @@ jobs:
         with:
           dotnet-version: '10.x'
 
+      - name: Setup Dalamud for CI
+        shell: pwsh
+        run: |
+          $dalamudPath = "$env:APPDATA\XIVLauncher\addon\Hooks\dev"
+          New-Item -ItemType Directory -Path $dalamudPath -Force | Out-Null
+
+          Write-Host "Downloading Dalamud assemblies for CI build..."
+
+          # Download from Dalamud staging (designed for CI)
+          $dalamudUrl = "https://goatcorp.github.io/dalamud-distrib/latest.zip"
+          $zipPath = "$env:TEMP\dalamud-latest.zip"
+
+          try {
+            Invoke-WebRequest -Uri $dalamudUrl -OutFile $zipPath -ErrorAction Stop
+            Write-Host "✓ Downloaded Dalamud assemblies"
+          }
+          catch {
+            Write-Host "ERROR: Failed to download Dalamud: $_" -ForegroundColor Red
+            exit 1
+          }
+
+          # Extract to Dalamud dev path
+          Expand-Archive -Path $zipPath -DestinationPath $dalamudPath -Force
+          Write-Host "✓ Dalamud assemblies extracted to $dalamudPath"
+
       - name: Restore dependencies
         run: dotnet restore
 
