@@ -122,6 +122,32 @@ jobs:
         with:
           dotnet-version: '10.x'
 
+      - name: Setup Dalamud for CI
+        shell: pwsh
+        run: |
+          $dalamudPath = "$env:APPDATA\XIVLauncher\addon\Hooks\dev"
+          New-Item -ItemType Directory -Path $dalamudPath -Force | Out-Null
+
+          Write-Host "Downloading Dalamud assemblies for CI build..."
+
+          # Download latest Dalamud release
+          $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/goatcorp/Dalamud/releases/latest"
+          $asset = $releases.assets | Where-Object { $_.name -eq "latest.zip" } | Select-Object -First 1
+
+          if ($null -eq $asset) {
+            Write-Host "ERROR: Could not find Dalamud latest.zip asset"
+            exit 1
+          }
+
+          $zipPath = "$env:TEMP\dalamud-latest.zip"
+          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath
+
+          # Extract to Dalamud dev path
+          Expand-Archive -Path $zipPath -DestinationPath $dalamudPath -Force
+
+          Write-Host "✓ Dalamud assemblies installed to $dalamudPath"
+          Get-ChildItem $dalamudPath -Recurse -Filter "*.dll" | Select-Object -First 5
+
       - name: Restore dependencies
         run: dotnet restore
 
