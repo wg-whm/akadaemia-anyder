@@ -23,11 +23,24 @@ namespace AkadaemiaAnyder.Data.Models
 
     /// <summary>
     /// Collection types matching database schema.
+    /// Extended to support all trackable collection categories.
     /// </summary>
     public enum CollectionType
     {
         Recipe = 1,
         GatheringNode = 2,
-        FishingHole = 3
+        FishingHole = 3,
+
+        // Additional collection types for comprehensive tracking
+        Gathering = 4,
+        Fishing = 5,
+        Mount = 6,
+        Minion = 7,
+        TripleTriadCard = 8,
+        OrchestrionRoll = 9,
+        Emote = 10,
+        Hairstyle = 11,
+        Barding = 12,
+        BlueMageSpell = 13
     }
 }
