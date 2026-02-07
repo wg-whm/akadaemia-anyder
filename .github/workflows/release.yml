@@ -1,0 +1,299 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+    name: Build Release
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '10.x'
+
+      - name: Extract version from tag
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref }}"
+          $version = $tag -replace '^refs/tags/v', ''
+          Write-Host "Release version: $version"
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_VERSION=$version"
+
+      - name: Update manifest version
+        shell: pwsh
+        run: |
+          $manifestPath = "AkadaemiaAnyder/AkadaemiaAnyder.json"
+          $manifest = Get-Content $manifestPath | ConvertFrom-Json
+          $manifest.AssemblyVersion = "${{ env.RELEASE_VERSION }}"
+          $manifest | ConvertTo-Json | Set-Content $manifestPath
+
+          Write-Host "Updated manifest version to ${{ env.RELEASE_VERSION }}"
+          Get-Content $manifestPath
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build Release
+        run: dotnet build AkadaemiaAnyder/AkadaemiaAnyder.csproj --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test AkadaemiaAnyder.Tests/AkadaemiaAnyder.Tests.csproj --configuration Release --no-build --verbosity normal
+
+      - name: Verify OutputPath
+        shell: pwsh
+        run: |
+          $outputPath = $env:APPDATA + "\XIVLauncher\devPlugins\AkadaemiaAnyder"
+          Write-Host "Expected output path: $outputPath"
+
+          if (-not (Test-Path $outputPath)) {
+            Write-Host "ERROR: Output directory not found at $outputPath" -ForegroundColor Red
+            exit 1
+          }
+
+          $dllPath = Join-Path $outputPath "AkadaemiaAnyder.dll"
+          $manifestPath = Join-Path $outputPath "AkadaemiaAnyder.json"
+
+          if (-not (Test-Path $dllPath)) {
+            Write-Host "ERROR: Plugin DLL not found at $dllPath" -ForegroundColor Red
+            exit 1
+          }
+
+          if (-not (Test-Path $manifestPath)) {
+            Write-Host "ERROR: Plugin manifest not found at $manifestPath" -ForegroundColor Red
+            exit 1
+          }
+
+          $dllSize = (Get-Item $dllPath).Length / 1024
+          Write-Host "✓ DLL found: $dllPath ($($dllSize)KB)"
+          Write-Host "✓ Manifest found: $manifestPath"
+
+      - name: Prepare artifacts
+        shell: pwsh
+        run: |
+          $outputPath = $env:APPDATA + "\XIVLauncher\devPlugins\AkadaemiaAnyder"
+          $stagingPath = ".\release-artifacts"
+
+          New-Item -ItemType Directory -Path $stagingPath -Force | Out-Null
+
+          # Copy plugin files
+          Copy-Item -Path (Join-Path $outputPath "AkadaemiaAnyder.dll") -Destination $stagingPath
+          Copy-Item -Path (Join-Path $outputPath "AkadaemiaAnyder.json") -Destination $stagingPath
+
+          # Copy documentation
+          Copy-Item -Path "README.md" -Destination $stagingPath
+          Copy-Item -Path "LICENSE" -Destination $stagingPath
+
+          # Create artifact archive
+          $zipPath = "release-artifacts\AkadaemiaAnyder-${{ env.RELEASE_VERSION }}.zip"
+          Compress-Archive -Path $stagingPath\* -DestinationPath $zipPath
+
+          Write-Host "✓ Release artifacts prepared"
+          Get-ChildItem $stagingPath
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: release-artifacts/
+          retention-days: 90
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Akadaemia Anyder v${{ env.RELEASE_VERSION }}
+          body: |
+            # Akadaemia Anyder v${{ env.RELEASE_VERSION }}
+
+            ## What's New
+            - Automated release build via GitHub Actions
+            - Version: ${{ env.RELEASE_VERSION }}
+
+            ## Installation
+            1. Extract the ZIP file
+            2. Copy `AkadaemiaAnyder.dll` and `AkadaemiaAnyder.json` to `%APPDATA%\XIVLauncher\devPlugins\AkadaemiaAnyder\`
+            3. Launch FFXIV via XIVLauncher
+            4. Type `/xlplugins` to enable the plugin
+            5. Type `/akadaemia` to open the collection tracker
+
+            ## Verification
+            - Plugin DLL: AkadaemiaAnyder.dll
+            - Manifest: AkadaemiaAnyder.json
+            - OutputPath: `$(APPDATA)\XIVLauncher\devPlugins\AkadaemiaAnyder\`
+            - Platform: Windows 10/11 (.NET 10+)
+
+            ## Documentation
+            See README.md for usage and architecture details.
+          draft: false
+          prerelease: false
+
+      - name: Upload release artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: release-artifacts/AkadaemiaAnyder-${{ env.RELEASE_VERSION }}.zip
+          asset_name: AkadaemiaAnyder-${{ env.RELEASE_VERSION }}.zip
+          asset_content_type: application/zip
+
+      - name: Verify Release
+        shell: pwsh
+        run: |
+          Write-Host "Release Summary" -ForegroundColor Cyan
+          Write-Host "================="
+          Write-Host "Tag: ${{ github.ref }}"
+          Write-Host "Version: ${{ env.RELEASE_VERSION }}"
+          Write-Host "Release Name: Akadaemia Anyder v${{ env.RELEASE_VERSION }}"
+          Write-Host ""
+          Write-Host "Artifact File: AkadaemiaAnyder-${{ env.RELEASE_VERSION }}.zip"
+
+          $zipPath = "release-artifacts\AkadaemiaAnyder-${{ env.RELEASE_VERSION }}.zip"
+          if (Test-Path $zipPath) {
+            $zipSize = (Get-Item $zipPath).Length / 1024
+            Write-Host "Artifact Size: $($zipSize)KB"
+            Write-Host ""
+            Write-Host "✓ Release created successfully"
+          } else {
+            Write-Host "ERROR: Release artifact not found" -ForegroundColor Red
+            exit 1
+          }
+
+  validate-release:
+    runs-on: windows-latest
+    name: Validate Release
+    needs: build-release
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+
+      - name: List artifacts
+        shell: pwsh
+        run: Get-ChildItem -Recurse
+
+      - name: Verify artifact integrity
+        shell: pwsh
+        run: |
+          Write-Host "Validating release artifacts..." -ForegroundColor Cyan
+
+          # Find ZIP file
+          $zipFile = Get-ChildItem -Filter "*.zip" -Recurse | Select-Object -First 1
+
+          if ($null -eq $zipFile) {
+            Write-Host "ERROR: No ZIP file found in artifacts" -ForegroundColor Red
+            exit 1
+          }
+
+          Write-Host "✓ ZIP file found: $($zipFile.Name)"
+          Write-Host "  Size: $($zipFile.Length / 1024)KB"
+
+          # Verify ZIP can be read
+          try {
+            $zip = [System.IO.Compression.ZipFile]::OpenRead($zipFile.FullName)
+            $entries = $zip.Entries
+            $zip.Dispose()
+
+            Write-Host "✓ ZIP file valid"
+            Write-Host "  Contains $($entries.Count) file(s):"
+            $entries | ForEach-Object { Write-Host "    - $($_.Name)" }
+          }
+          catch {
+            Write-Host "ERROR: Failed to read ZIP file: $_" -ForegroundColor Red
+            exit 1
+          }
+
+          # Verify required files
+          $requiredFiles = @("AkadaemiaAnyder.dll", "AkadaemiaAnyder.json", "README.md", "LICENSE")
+
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($zipFile.FullName)
+
+          foreach ($file in $requiredFiles) {
+            $found = $zip.Entries | Where-Object { $_.Name -eq $file }
+
+            if ($null -eq $found) {
+              Write-Host "ERROR: Required file missing: $file" -ForegroundColor Red
+              $zip.Dispose()
+              exit 1
+            }
+
+            Write-Host "✓ $file present ($($found.Length) bytes)"
+          }
+
+          $zip.Dispose()
+
+          Write-Host ""
+          Write-Host "✓ All validation checks passed" -ForegroundColor Green
+
+  publish-release:
+    runs-on: ubuntu-latest
+    name: Publish Release
+    needs: validate-release
+    if: success()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Extract version
+        shell: bash
+        run: |
+          TAG=$(echo ${{ github.ref }} | sed 's#refs/tags/##')
+          VERSION=$(echo $TAG | sed 's/^v//')
+          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Notify release
+        shell: bash
+        run: |
+          echo "Release Published"
+          echo "=================="
+          echo "Tag: ${{ env.RELEASE_TAG }}"
+          echo "Version: ${{ env.RELEASE_VERSION }}"
+          echo ""
+          echo "Release available at:"
+          echo "https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}"
+
+      - name: Create release summary
+        shell: bash
+        run: |
+          cat > release_summary.txt << 'EOF'
+          Akadaemia Anyder Release Summary
+          =================================
+
+          Version: ${{ env.RELEASE_VERSION }}
+          Tag: ${{ env.RELEASE_TAG }}
+          Build Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+
+          Build Status: SUCCESS
+          - Code compiled successfully (.NET 10)
+          - All unit tests passed
+          - Release artifacts created
+          - GitHub release published
+
+          Installation: Download the ZIP file from the release page
+          Documentation: See README.md in the release
+
+          GitHub Release: https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}
+          EOF
+          cat release_summary.txt
+
+      - name: Upload release summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-summary
+          path: release_summary.txt
+          retention-days: 90

@@ -11,6 +11,7 @@ using SamplePlugin.Services;
 using SamplePlugin.MemoryReaders;
 using SamplePlugin.EventListeners;
 using AkadaemiaAnyder.Core.Models;
+using AkadaemiaAnyder.Data.Services;
 using System.Collections.Generic;
 
 namespace SamplePlugin;
@@ -51,6 +52,8 @@ public sealed class Plugin : IDalamudPlugin
     private readonly JsonExporter jsonExporter;
     private readonly JsonImporter jsonImporter;
     private readonly TelemetryService telemetryService;
+    private readonly MaterialAvailabilityRepository materialAvailabilityRepository;
+    private readonly MaterialAvailabilityCacheService materialCacheService;
 
     public Plugin()
     {
@@ -72,6 +75,15 @@ public sealed class Plugin : IDalamudPlugin
         recipeRepository = new RecipeRepository(databaseContext, Log);
         gatheringRepository = new GatheringRepository(databaseContext, Log);
         fishingRepository = new FishingRepository(databaseContext, Log);
+        materialAvailabilityRepository = new MaterialAvailabilityRepository(databaseContext, Log);
+
+        // 3.5 Initialize cache services
+        materialCacheService = new MaterialAvailabilityCacheService(
+            materialAvailabilityRepository,
+            Log,
+            ClientState
+        );
+        Log.Information("[AkadaemiaAnyder] Material cache service initialized");
 
         // 4. Initialize memory readers and event listeners
         recipeReader = new RecipeReader(Log, DataManager);
@@ -146,7 +158,9 @@ public sealed class Plugin : IDalamudPlugin
             jsonExporter,
             jsonImporter,
             databaseContext,
-            loggingService
+            loggingService,
+            Configuration,
+            materialCacheService
         );
 
         WindowSystem.AddWindow(ConfigWindow);

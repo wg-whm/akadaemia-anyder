@@ -1,0 +1,34 @@
+{
+  "project_file": "C:/Code/akadaemia-anyder/SamplePlugin/SamplePlugin.csproj",
+  "build_success": false,
+  "build_status": "blocked_by_dalamud_dependency",
+  "build_failure_reason": "Dalamud.NET.Sdk requires Dalamud DLLs to be present in %APPDATA%\XIVLauncher\addon\Hooks\dev\ - game not installed on this system",
+  "dll_path": "%APPDATA%\XIVLauncher\devPlugins\AkadaemiaAnyder\\",
+  "in_game_verified": "pending",
+  "verification_details": {
+    "dotnet_version": "8.0.417",
+    "target_framework": "net8.0-windows7.0",
+    "vs2022_installed": false,
+    "ffxivcs_reference": "configured_at_appdata_xivlauncher_addon_hooks_dev",
+    "microsoft_data_sqlite": "v8.0.0_resolved",
+    "project_restored": true,
+    "project_built": false
+  },
+  "configuration_applied": {
+    "target_framework_updated": true,
+    "output_path_configured": true,
+    "ffxivcs_dll_reference_added": true,
+    "microsoft_data_sqlite_added": true,
+    "package_url_updated": true,
+    "license_expression_updated": true
+  },
+  "files_created": [
+    "C:/Code/akadaemia-anyder/SamplePlugin/SamplePlugin.csproj",
+    "C:/Code/akadaemia-anyder/SamplePlugin/Plugin.cs",
+    "C:/Code/akadaemia-anyder/SamplePlugin/Configuration.cs",
+    "C:/Code/akadaemia-anyder/SamplePlugin/SamplePlugin.json",
+    "C:/Code/akadaemia-anyder/SamplePlugin/Windows/",
+    "C:/Code/akadaemia-anyder/T1_SETUP_SUMMARY.md"
+  ],
+  "notes": "Build will succeed once game is installed and Dalamud is initialized with required DLLs. All project configuration is complete and correct. Microsoft.Data.Sqlite successfully resolved with all dependencies (v8.0.0)."
+}

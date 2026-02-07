@@ -1,0 +1,119 @@
+name: Claude Code
+
+# Top-level permissions (most restrictive)
+permissions:
+  contents: read
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number || github.ref }}
+  # Do NOT cancel-in-progress: Claude's own comment triggers a new run
+
+jobs:
+  claude-mention:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@a7e4c51380c42dd89b127f5e5f9be7b54020bc6b # v1.0.21
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "dependabot[bot],claude[bot]"
+          track_progress: true
+
+  claude-pr-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 1
+
+      - name: Delete previous Claude review comments
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+        run: |
+          # Delete previous Claude review comments so each push gets fresh analysis
+          gh api "repos/${REPO}/pulls/${PR_NUM}/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" or .user.login == "claude[bot]") | .id' \
+            | xargs -I {} gh api -X DELETE "repos/${REPO}/pulls/comments/{}" 2>/dev/null || true
+
+          # Also delete issue comments from previous runs
+          gh api "repos/${REPO}/issues/${PR_NUM}/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" or .user.login == "claude[bot]") | .id' \
+            | xargs -I {} gh api -X DELETE "repos/${REPO}/issues/comments/{}" 2>/dev/null || true
+
+      - name: Run Claude Code Review
+        id: claude
+        uses: anthropics/claude-code-action@a7e4c51380c42dd89b127f5e5f9be7b54020bc6b # v1.0.21
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "dependabot[bot],claude[bot]"
+          track_progress: true
+          claude_args: "--allowedTools 'Bash(gh pr review:*),Bash(gh pr merge:*),Read,Grep,Glob'"
+          prompt: >-
+            Review this pull request for bugs, security issues, and code quality.
+
+            Context: This is a Dalamud plugin for Final Fantasy XIV written in C#.
+            It uses unsafe memory operations and interacts with game memory.
+
+            Focus on:
+            - Memory safety issues (unsafe blocks, pointer arithmetic, buffer overflows)
+            - Security vulnerabilities (SQL injection in SQLite queries, path traversal)
+            - Logic errors that could cause crashes or data corruption
+            - Proper error handling and edge cases (especially in database fallback logic)
+            - Breaking changes to interfaces
+            - Thread safety in async operations
+            - Proper disposal of unmanaged resources (database connections, etc.)
+
+            IMPORTANT: You MUST submit a formal GitHub review using gh CLI:
+            - If issues found: `gh pr review --request-changes --body "Summary of issues"`
+            - If code is safe: `gh pr review --approve --body "LGTM - brief summary"`
+
+            For Dependabot PRs:
+            - Check changelog for breaking changes
+            - Pay special attention to Dalamud.NET.Sdk and FFXIVClientStructs updates (breaking changes common)
+            - If safe (dev deps, patches, safe minors): approve + `gh pr merge --auto --squash`
+            - If breaking changes or major version bumps: request changes and flag for manual review
+
+            Be concise. Fail closed: if unsure, request changes.

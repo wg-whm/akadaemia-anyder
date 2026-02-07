@@ -1,0 +1,30 @@
+name: Check Hardcoded Paths
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  check-hardcoded-paths:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+
+      - name: Check for hardcoded paths
+        run: bash scripts/checks/check-hardcoded-paths.sh
+
+      - name: Summary
+        if: failure()
+        run: |
+          echo "## Hardcoded Path Check Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Found hardcoded paths in the codebase. See the job output for details." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### How to Fix" >> $GITHUB_STEP_SUMMARY
+          echo "Replace hardcoded paths with environment-aware alternatives:" >> $GITHUB_STEP_SUMMARY
+          echo "- **C#**: Use \`Environment.GetFolderPath()\` or \`Path.Combine()\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **PowerShell**: Use \`\$env:APPDATA\`, \`\$PSScriptRoot\`, or \`Join-Path\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **.csproj**: Use \`\$(APPDATA)\` for OutputPath and HintPath" >> $GITHUB_STEP_SUMMARY

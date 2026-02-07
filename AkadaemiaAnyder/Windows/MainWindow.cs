@@ -7,6 +7,7 @@ using Dalamud.Interface.Windowing;
 using SamplePlugin.Services;
 using AkadaemiaAnyder.Core.Models;
 using AkadaemiaAnyder.Data;
+using AkadaemiaAnyder.Data.Services;
 
 namespace SamplePlugin.Windows;
 
@@ -19,6 +20,12 @@ public class MainWindow : Window, IDisposable
     private readonly JsonImporter jsonImporter;
     private readonly DatabaseContext databaseContext;
     private readonly LoggingService logger;
+    private readonly Configuration configuration;
+
+    // New UI tabs for Phase 5
+    private readonly InventoryTab inventoryTab;
+    private readonly CollectionsTab collectionsTab;
+    private readonly PrivacySettingsTab privacySettingsTab;
 
     // CRITICAL: Field-based state (NOT properties) for thread-safe UI updates
     private bool isScanning = false;
@@ -40,7 +47,9 @@ public class MainWindow : Window, IDisposable
         JsonExporter jsonExporter,
         JsonImporter jsonImporter,
         DatabaseContext databaseContext,
-        LoggingService logger)
+        LoggingService logger,
+        Configuration configuration,
+        MaterialAvailabilityCacheService materialCacheService)
         : base("Akadaemia Anyder##MainWindow", ImGuiWindowFlags.None)
     {
         SizeConstraints = new WindowSizeConstraints
@@ -56,6 +65,12 @@ public class MainWindow : Window, IDisposable
         this.jsonImporter = jsonImporter ?? throw new ArgumentNullException(nameof(jsonImporter));
         this.databaseContext = databaseContext ?? throw new ArgumentNullException(nameof(databaseContext));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+
+        // Initialize new UI tabs
+        this.inventoryTab = new InventoryTab(materialCacheService, logger);
+        this.collectionsTab = new CollectionsTab(progressCalculator, logger);
+        this.privacySettingsTab = new PrivacySettingsTab(configuration, jsonExporter, logger);
 
         // Load initial stats on startup
         RefreshStatsInBackground();
@@ -77,7 +92,38 @@ public class MainWindow : Window, IDisposable
             DrawRecipesTab();
             DrawGatheringTab();
             DrawFishingTab();
+            DrawInventoryTab();
+            DrawCollectionsTab();
             DrawSettingsTab();
+            DrawPrivacyTab();
+        }
+    }
+
+    private void DrawInventoryTab()
+    {
+        using (var tab = ImRaii.TabItem("Inventory"))
+        {
+            if (!tab.Success)
+                return;
+
+            inventoryTab.Draw();
+        }
+    }
+
+    private void DrawCollectionsTab()
+    {
+        // Collections tab handles its own TabItem rendering internally
+        collectionsTab.Draw();
+    }
+
+    private void DrawPrivacyTab()
+    {
+        using (var tab = ImRaii.TabItem("Privacy"))
+        {
+            if (!tab.Success)
+                return;
+
+            privacySettingsTab.Draw();
         }
     }
 
